@@ -5,7 +5,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Button } from "./ui/button"
 
 // Mock data for the chart
-const data = {
+type TimeRange = "1m" | "3m" | "1y" | "all";
+
+const data: Record<TimeRange, { date: string; value: number }[]> = {
   "1m": [
     { date: "Mar 1", value: 125000 },
     { date: "Mar 5", value: 124200 },
@@ -49,13 +51,13 @@ const data = {
 interface PortfolioChartProps {
   showBalances: boolean
 }
-
+  const [timeRange, setTimeRange] = useState<TimeRange>("1y")
 export function PortfolioChart({ showBalances }: PortfolioChartProps) {
-  const [timeRange, setTimeRange] = useState("1y")
+  const [timeRange, setTimeRange] = useState<TimeRange>("1y")
   
   const chartData = data[timeRange]
   
-  const formatYAxis = (value) => {
+  const formatYAxis = (value: number) => {
     if (!showBalances) return "••••••"
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -65,7 +67,7 @@ export function PortfolioChart({ showBalances }: PortfolioChartProps) {
     }).format(value)
   }
   
-  const formatTooltip = (value) => {
+  const formatTooltip = (value: number) => {
     if (!showBalances) return "••••••"
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -120,7 +122,7 @@ export function PortfolioChart({ showBalances }: PortfolioChartProps) {
           <XAxis dataKey="date" />
           <YAxis tickFormatter={formatYAxis} />
           <Tooltip 
-            formatter={(value) => [formatTooltip(value), "Value"]}
+            formatter={(value: any) => [formatTooltip(Number(value)), "Value"]}
             labelFormatter={(label) => `Date: ${label}`}
           />
           <Line

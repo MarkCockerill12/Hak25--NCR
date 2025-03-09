@@ -13,6 +13,11 @@ import {
 import { ArrowDownLeft, ArrowUpRight, DollarSign, Percent, TrendingDown, TrendingUp } from 'lucide-react'
 import { DateRangePicker } from "./date-range-picker"
 
+interface DateRange {
+  from: Date
+  to: Date
+}
+
 interface InvestmentActivityProps {
   accountId: string
   transactions: Array<{
@@ -34,7 +39,7 @@ interface InvestmentActivityProps {
 export function InvestmentActivity({ accountId, transactions, showBalances, currency }: InvestmentActivityProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filter, setFilter] = useState("all")
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({})
+  const [dateRange, setDateRange] = useState<DateRange>({ from: new Date(), to: new Date() })
 
   // Filter transactions by account ID
   const accountTransactions = transactions.filter(
@@ -116,7 +121,18 @@ export function InvestmentActivity({ accountId, transactions, showBalances, curr
   }
 
   // Get transaction description
-  const getTransactionDescription = (transaction) => {
+  const getTransactionDescription = (transaction: {
+    id: string
+    accountId: string
+    type: string
+    ticker: string
+    shares: number
+    price: number
+    amount: number
+    date: string
+    status: string
+    fee: number
+  }) => {
     switch (transaction.type) {
       case 'buy':
         return `Buy ${transaction.shares} shares of ${transaction.ticker}`
@@ -144,19 +160,20 @@ export function InvestmentActivity({ accountId, transactions, showBalances, curr
         />
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-            <SelectValue placeholder="Filter" />
+        <SelectValue placeholder="Filter" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Transactions</SelectItem>
-            <SelectItem value="buys">Buys Only</SelectItem>
-            <SelectItem value="sells">Sells Only</SelectItem>
-            <SelectItem value="dividends">Dividends Only</SelectItem>
-            <SelectItem value="deposits">Deposits Only</SelectItem>
+        <SelectItem value="all">All Transactions</SelectItem>
+        <SelectItem value="buys">Buys Only</SelectItem>
+        <SelectItem value="sells">Sells Only</SelectItem>
+        <SelectItem value="dividends">Dividends Only</SelectItem>
+        <SelectItem value="deposits">Deposits Only</SelectItem>
           </SelectContent>
         </Select>
-        <DateRangePicker 
-          date={dateRange} 
-          onDateChange={setDateRange} 
+        <DateRangePicker
+          date={{ from: dateRange.from, to: dateRange.to }}
+          onDateChange={(range: { from?: Date; to?: Date } | undefined) =>
+            setDateRange({ from: range?.from || new Date(), to: range?.to || new Date() })}
         />
       </div>
 

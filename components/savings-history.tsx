@@ -7,6 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { ArrowUpRight, Coins, PiggyBank, Percent } from "lucide-react"
 import { DateRangePicker } from "./date-range-picker"
 
+interface DateRange {
+  from: Date | undefined
+  to?: Date | undefined
+}
+
 interface SavingsHistoryProps {
   accountId: string
   transactions: Array<{
@@ -25,7 +30,7 @@ interface SavingsHistoryProps {
 export function SavingsHistory({ accountId, transactions, showBalances, currency }: SavingsHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filter, setFilter] = useState("all")
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({})
+  const [dateRange, setDateRange] = useState<DateRange>({ from: new Date(), to: undefined })
 
   // Filter transactions by account ID
   const accountTransactions = transactions.filter((transaction) => transaction.accountId === accountId)
@@ -115,7 +120,7 @@ export function SavingsHistory({ accountId, transactions, showBalances, currency
             <SelectItem value="interest">Interest Only</SelectItem>
           </SelectContent>
         </Select>
-        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+        <DateRangePicker date={dateRange} onDateChange={(date) => setDateRange(date)} />
       </div>
 
       <div className="space-y-6">
