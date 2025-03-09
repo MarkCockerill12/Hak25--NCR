@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { ArrowDown, ArrowUp } from "lucide-react"
+import { ArrowDown, ArrowUp } from 'lucide-react'
 
 interface AccountSummaryProps {
   title: string
@@ -7,9 +7,17 @@ interface AccountSummaryProps {
   balance: number
   change: number
   isCredit?: boolean
+  showBalances?: boolean
 }
 
-export function AccountSummary({ title, accountNumber, balance, change, isCredit = false }: AccountSummaryProps) {
+export function AccountSummary({ 
+  title, 
+  accountNumber, 
+  balance, 
+  change, 
+  isCredit = false,
+  showBalances = true
+}: AccountSummaryProps) {
   const formattedBalance = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -29,18 +37,18 @@ export function AccountSummary({ title, accountNumber, balance, change, isCredit
       <CardContent>
         <div className="text-2xl font-bold text-gray-900 dark:text-white">
           {isCredit && balance < 0 ? "-" : ""}
-          {formattedBalance}
+          {showBalances ? formattedBalance : "••••••"}
         </div>
         <div className="flex items-center pt-1 text-xs">
           {change > 0 ? (
             <>
               <ArrowUp className="mr-1 h-3 w-3 text-green-500" />
-              <span className="text-green-500">{formattedChange}</span>
+              <span className="text-green-500">{showBalances ? formattedChange : "••••••"}</span>
             </>
           ) : (
             <>
               <ArrowDown className="mr-1 h-3 w-3 text-red-500" />
-              <span className="text-red-500">{formattedChange}</span>
+              <span className="text-red-500">{showBalances ? formattedChange : "••••••"}</span>
             </>
           )}
           <span className="ml-1 text-gray-500 dark:text-gray-400">since last week</span>
@@ -49,4 +57,3 @@ export function AccountSummary({ title, accountNumber, balance, change, isCredit
     </Card>
   )
 }
-

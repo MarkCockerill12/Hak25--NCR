@@ -1,40 +1,239 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
+import type React from "react"
 import { Button } from "./ui/button"
-import { ArrowUpRight, CreditCard, Download, PiggyBank, Smartphone, Upload } from "lucide-react"
+import { ArrowUpRight, CreditCard, Download, PiggyBank, Smartphone, Upload } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 
-export function QuickActions() {
-  const [activeAction, setActiveAction] = useState<string | null>(null)
-  const [amount, setAmount] = useState("")
-  const [actionSuccess, setActionSuccess] = useState(false)
-  const [processingAction, setProcessingAction] = useState(false)
+interface QuickActionsProps {
+  onTransfer?: () => void
+  accounts?: Array<{
+    id: string
+    name: string
+    number: string
+    balance: number
+    available: number
+  }>
+  onUpdateAccounts?: (data: any) => void
+  onPayBills?: () => void
+  onSavings?: () => void
+  onMobileTopup?: () => void
+}
 
-  const handleAction = (action: string) => {
-    setActiveAction(action)
+export function QuickActions({ 
+  onTransfer, 
+  accounts = [], 
+  onUpdateAccounts = () => {},
+  onPayBills = () => {},
+  onSavings = () => {},
+  onMobileTopup = () => {}
+}: QuickActionsProps) {
+  const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false)
+  const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false)
+  const [isBillPayDialogOpen, setIsBillPayDialogOpen] = useState(false)
+  const [isMobileTopupDialogOpen, setIsMobileTopupDialogOpen] = useState(false)
+  const [selectedAccount, setSelectedAccount] = useState("")
+  const [amount, setAmount] = useState("")
+  const [billPayee, setBillPayee] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+
+  // Handle deposit submission
+  const handleDeposit = () => {
+    const depositAmount = Number.parseFloat(amount)
+    if (isNaN(depositAmount) || depositAmount <= 0 || !selectedAccount) return
+
+    // Find the account
+    const account = accounts.find((acc) => acc.id === selectedAccount)
+    if (!account) return
+
+    // Create new transaction
+    const depositTransaction = {
+      id: `t${Date.now()}`,
+      accountId: account.id,
+      type: "credit",
+      description: "Cash Deposit",
+      category: "Deposit",
+      amount: depositAmount,
+      date: new Date().toISOString(),
+    }
+
+    // Update account balance
+    const updatedAccounts = accounts.map((acc) => {
+      if (acc.id === account.id) {
+        return {
+          ...acc,
+          balance: acc.balance + depositAmount,
+          available: acc.available + depositAmount,
+        }
+      }
+      return acc
+    })
+
+    // Update state via callback
+    onUpdateAccounts({
+      accounts: updatedAccounts,
+      transactions: [depositTransaction], // Let the parent component handle merging with existing transactions
+    })
+
+    // Close dialog and reset form
+    setIsDepositDialogOpen(false)
+    setSelectedAccount("")
     setAmount("")
-    setActionSuccess(false)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setProcessingAction(true)
+  // Handle withdrawal submission
+  const handleWithdraw = () => {
+    const withdrawAmount = Number.parseFloat(amount)
+    if (isNaN(withdrawAmount) || withdrawAmount <= 0 || !selectedAccount) return
+
+    // Find the account
+    const account = accounts.find((acc) => acc.id === selectedAccount)
+    if (!account) return
+
+    // Check if there are sufficient funds
+    if (account.available < withdrawAmount) {
+      alert("Insufficient funds for this withdrawal.")
+      return
+    }
+
+    // Create new transaction
+    const withdrawTransaction = {
+      id: `t${Date.now()}`,
+      accountId: account.id,
+      type: "debit",
+      description: "ATM Withdrawal",
+      category: "Withdrawal",
+      amount: withdrawAmount,
+      date: new Date().toISOString(),
+    }
+
+    // Update account balance
+    const updatedAccounts = accounts.map((acc) => {
+      if (acc.id === account.id) {
+        return {
+          ...acc,
+          balance: acc.balance - withdrawAmount,
+          available: acc.available - withdrawAmount,
+        }
+      }
+      return acc
+    })
+
+    // Update state via callback
+    onUpdateAccounts({
+      accounts: updatedAccounts,
+      transactions: [withdrawTransaction], // Let the parent component handle merging with existing transactions
+    })
+
+    // Close dialog and reset form
+    setIsWithdrawDialogOpen(false)
+    setSelectedAccount("")
+    setAmount("")
+  }
+
+  // Handle bill payment
+  const handlePayBill = () => {
+    const paymentAmount = parseFloat(amount)
+    if (isNaN(paymentAmount) || paymentAmount <= 0 || !selectedAccount || !billPayee) return
     
-    // Simulate processing time
-    setTimeout(() => {
-      setProcessingAction(false)
-      setActionSuccess(true)
-      
-      // Reset after showing success
-      setTimeout(() => {
-        setActiveAction(null)
-        setActionSuccess(false)
-      }, 2000)
-    }, 1500)
+    // Find the account
+    const account = accounts.find(acc => acc.id === selectedAccount)
+    if (!account) return
+    
+    // Check if there are sufficient funds
+    if (account.available < paymentAmount) {
+      alert("Insufficient funds for this payment.")
+      return
+    }
+    
+    // Create new transaction
+    const billTransaction = {
+      id: `t${Date.now()}`,
+      accountId: account.id,
+      type: "debit",
+      description: `Bill Payment - ${billPayee}`,
+      category: "Bills",
+      amount: paymentAmount,
+      date: new Date().toISOString(),
+    }
+    
+    // Update account balance
+    const updatedAccounts = accounts.map(acc => {
+      if (acc.id === account.id) {
+        return {
+          ...acc,
+          balance: acc.balance - paymentAmount,
+          available: acc.available - paymentAmount
+        }
+      }
+      return acc
+    })
+    
+    // Update state via callback
+    onUpdateAccounts({
+      accounts: updatedAccounts,
+      transactions: [billTransaction] // Let the parent component handle merging with existing transactions
+    })
+    
+    // Close dialog and reset form
+    setIsBillPayDialogOpen(false)
+    setSelectedAccount("")
+    setAmount("")
+    setBillPayee("")
+  }
+
+  // Handle mobile top-up
+  const handleMobileTopup = () => {
+    const topupAmount = parseFloat(amount)
+    if (isNaN(topupAmount) || topupAmount <= 0 || !selectedAccount || !phoneNumber) return
+    
+    // Find the account
+    const account = accounts.find(acc => acc.id === selectedAccount)
+    if (!account) return
+    
+    // Check if there are sufficient funds
+    if (account.available < topupAmount) {
+      alert("Insufficient funds for this top-up.")
+      return
+    }
+    
+    // Create new transaction
+    const topupTransaction = {
+      id: `t${Date.now()}`,
+      accountId: account.id,
+      type: "debit",
+      description: `Mobile Top-up - ${phoneNumber}`,
+      category: "Mobile",
+      amount: topupAmount,
+      date: new Date().toISOString(),
+    }
+    
+    // Update account balance
+    const updatedAccounts = accounts.map(acc => {
+      if (acc.id === account.id) {
+        return {
+          ...acc,
+          balance: acc.balance - topupAmount,
+          available: acc.available - topupAmount
+        }
+      }
+      return acc
+    })
+    
+    // Update state via callback
+    onUpdateAccounts({
+      accounts: updatedAccounts,
+      transactions: [topupTransaction] // Let the parent component handle merging with existing transactions
+    })
+    
+    // Close dialog and reset form
+    setIsMobileTopupDialogOpen(false)
+    setSelectedAccount("")
+    setAmount("")
+    setPhoneNumber("")
   }
 
   return (
@@ -43,279 +242,316 @@ export function QuickActions() {
         <ActionButton 
           icon={<Upload className="h-4 w-4" />} 
           label="Deposit" 
-          onClick={() => handleAction("deposit")}
+          onClick={() => setIsDepositDialogOpen(true)}
         />
         <ActionButton 
           icon={<Download className="h-4 w-4" />} 
           label="Withdraw" 
-          onClick={() => handleAction("withdraw")}
+          onClick={() => setIsWithdrawDialogOpen(true)}
         />
         <ActionButton 
           icon={<ArrowUpRight className="h-4 w-4" />} 
           label="Transfer" 
-          onClick={() => handleAction("transfer")}
+          onClick={onTransfer}
         />
         <ActionButton 
           icon={<CreditCard className="h-4 w-4" />} 
           label="Pay Bills" 
-          onClick={() => handleAction("billpay")}
+          onClick={() => setIsBillPayDialogOpen(true)}
         />
         <ActionButton 
           icon={<PiggyBank className="h-4 w-4" />} 
           label="Savings" 
-          onClick={() => handleAction("savings")}
+          onClick={onSavings}
         />
         <ActionButton 
           icon={<Smartphone className="h-4 w-4" />} 
           label="Mobile Top-up" 
-          onClick={() => handleAction("topup")}
+          onClick={() => setIsMobileTopupDialogOpen(true)}
         />
       </div>
 
-      {/* Action Dialogs */}
-      <Dialog open={activeAction !== null} onOpenChange={() => setActiveAction(null)}>
-        <DialogContent className="sm:max-w-[425px]">
+      {/* Deposit Dialog */}
+      <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {activeAction === "deposit" && "Make a Deposit"}
-              {activeAction === "withdraw" && "Make a Withdrawal"}
-              {activeAction === "transfer" && "Transfer Money"}
-              {activeAction === "billpay" && "Pay Bills"}
-              {activeAction === "savings" && "Savings Options"}
-              {activeAction === "topup" && "Mobile Top-up"}
-            </DialogTitle>
-            <DialogDescription>
-              {actionSuccess 
-                ? "Transaction completed successfully!" 
-                : `Please enter the details for your ${activeAction}.`}
-            </DialogDescription>
+            <DialogTitle>Deposit Funds</DialogTitle>
+            <DialogDescription>Deposit money into your account.</DialogDescription>
           </DialogHeader>
 
-          {!actionSuccess ? (
-            <form onSubmit={handleSubmit}>
-              {(activeAction === "deposit" || activeAction === "withdraw" || activeAction === "transfer") && (
-                <div className="grid gap-4 py-4">
-                  {activeAction === "transfer" && (
-                    <>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="from-account" className="text-right">
-                          From
-                        </Label>
-                        <select 
-                          id="from-account"
-                          className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                        >
-                          <option value="checking">Checking (**** 1234)</option>
-                          <option value="savings">Savings (**** 5678)</option>
-                        </select>
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="to-account" className="text-right">
-                          To
-                        </Label>
-                        <select 
-                          id="to-account"
-                          className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                        >
-                          <option value="savings">Savings (**** 5678)</option>
-                          <option value="checking">Checking (**** 1234)</option>
-                          <option value="external">External Account</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
-                  
-                  {(activeAction === "deposit" || activeAction === "withdraw") && (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="account" className="text-right">
-                        Account
-                      </Label>
-                      <select 
-                        id="account"
-                        className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                      >
-                        <option value="checking">Checking (**** 1234)</option>
-                        <option value="savings">Savings (**** 5678)</option>
-                      </select>
-                    </div>
-                  )}
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="depositAccount">Select Account</Label>
+              <select
+                id="depositAccount"
+                value={selectedAccount}
+                onChange={(e) => setSelectedAccount(e.target.value)}
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+              >
+                <option value="">Select an account</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.number})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right">
-                      Amount
-                    </Label>
-                    <Input
-                      id="amount"
-                      type="text"
-                      placeholder="$0.00"
-                      className="col-span-3"
-                      value={amount}
-                      onChange={(e) => {
-                        // Only allow numbers and decimals
-                        const value = e.target.value;
-                        if (/^\d*\.?\d{0,2}$/.test(value) || value === '') {
-                          setAmount(value);
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {activeAction === "billpay" && (
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="payee" className="text-right">
-                      Payee
-                    </Label>
-                    <select 
-                      id="payee"
-                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                    >
-                      <option value="">Select a payee</option>
-                      <option value="utility">City Utilities</option>
-                      <option value="internet">Internet Service</option>
-                      <option value="phone">Phone Company</option>
-                      <option value="other">Add New Payee</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right">
-                      Amount
-                    </Label>
-                    <Input
-                      id="amount"
-                      type="text"
-                      placeholder="$0.00"
-                      className="col-span-3"
-                      value={amount}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (/^\d*\.?\d{0,2}$/.test(value) || value === '') {
-                          setAmount(value);
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {activeAction === "savings" && (
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="savings-action" className="text-right">
-                      Action
-                    </Label>
-                    <select 
-                      id="savings-action"
-                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                    >
-                      <option value="">Select an option</option>
-                      <option value="goal">Create Savings Goal</option>
-                      <option value="auto">Setup Auto-Save</option>
-                      <option value="interest">View Interest Rates</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {activeAction === "topup" && (
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="phone" className="text-right">
-                      Phone #
-                    </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="(555) 123-4567"
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="carrier" className="text-right">
-                      Carrier
-                    </Label>
-                    <select 
-                      id="carrier"
-                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                    >
-                      <option value="">Select carrier</option>
-                      <option value="att">AT&T</option>
-                      <option value="verizon">Verizon</option>
-                      <option value="tmobile">T-Mobile</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="topup-amount" className="text-right">
-                      Amount
-                    </Label>
-                    <Input
-                      id="topup-amount"
-                      type="text"
-                      placeholder="$0.00"
-                      className="col-span-3"
-                      value={amount}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (/^\d*\.?\d{0,2}$/.test(value) || value === '') {
-                          setAmount(value);
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setActiveAction(null)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={processingAction || (!amount && activeAction !== "savings")}
-                >
-                  {processingAction ? "Processing..." : "Continue"}
-                </Button>
-              </DialogFooter>
-            </form>
-          ) : (
-            <div className="flex justify-center items-center py-8">
-              <div className="bg-green-100 text-green-800 p-4 rounded-full">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-12 w-12" 
-                  viewBox="0 0 20 20" 
-                  fill="currentColor"
-                >
-                  <path 
-                    fillRule="evenodd" 
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                    clipRule="evenodd" 
-                  />
-                </svg>
+            <div className="space-y-2">
+              <Label htmlFor="depositAmount">Amount</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <Input
+                  id="depositAmount"
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="pl-7"
+                  min="0.01"
+                  step="0.01"
+                />
               </div>
             </div>
-          )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDepositDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleDeposit} disabled={!amount || Number.parseFloat(amount) <= 0 || !selectedAccount}>
+              Deposit Funds
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Withdraw Dialog */}
+      <Dialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Withdraw Funds</DialogTitle>
+            <DialogDescription>Withdraw money from your account.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="withdrawAccount">Select Account</Label>
+              <select
+                id="withdrawAccount"
+                value={selectedAccount}
+                onChange={(e) => setSelectedAccount(e.target.value)}
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+              >
+                <option value="">Select an account</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.number}) - ${account.available.toFixed(2)} available
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="withdrawAmount">Amount</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <Input
+                  id="withdrawAmount"
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="pl-7"
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+              {selectedAccount && (
+                <p className="text-xs text-gray-500">
+                  Available balance: $
+                  {accounts.find((acc) => acc.id === selectedAccount)?.available.toFixed(2) || "0.00"}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWithdrawDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleWithdraw} disabled={!amount || Number.parseFloat(amount) <= 0 || !selectedAccount}>
+              Withdraw Funds
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bill Pay Dialog */}
+      <Dialog open={isBillPayDialogOpen} onOpenChange={setIsBillPayDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay Bills</DialogTitle>
+            <DialogDescription>
+              Pay your bills from your account.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="billPayAccount">Select Account</Label>
+              <select
+                id="billPayAccount"
+                value={selectedAccount}
+                onChange={(e) => setSelectedAccount(e.target.value)}
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+              >
+                <option value="">Select an account</option>
+                {accounts.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.number}) - ${account.available.toFixed(2)} available
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="billPayee">Payee</Label>
+              <select
+                id="billPayee"
+                value={billPayee}
+                onChange={(e) => setBillPayee(e.target.value)}
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+              >
+                <option value="">Select a payee</option>
+                <option value="Electric Company">Electric Company</option>
+                <option value="Water Utility">Water Utility</option>
+                <option value="Internet Provider">Internet Provider</option>
+                <option value="Cell Phone">Cell Phone</option>
+                <option value="Credit Card">Credit Card</option>
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="billAmount">Amount</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <Input
+                  id="billAmount"
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="pl-7"
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+              {selectedAccount && (
+                <p className="text-xs text-gray-500">
+                  Available balance: ${accounts.find(acc => acc.id === selectedAccount)?.available.toFixed(2) || '0.00'}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBillPayDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handlePayBill} 
+              disabled={!amount || parseFloat(amount) <= 0 || !selectedAccount || !billPayee}
+            >
+              Pay Bill
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile Top-up Dialog */}
+      <Dialog open={isMobileTopupDialogOpen} onOpenChange={setIsMobileTopupDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mobile Top-up</DialogTitle>
+            <DialogDescription>
+              Add credit to your mobile phone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="topupAccount">Select Account</Label>
+              <select
+                id="topupAccount"
+                value={selectedAccount}
+                onChange={(e) => setSelectedAccount(e.target.value)}
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+              >
+                <option value="">Select an account</option>
+                {accounts.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.number}) - ${account.available.toFixed(2)} available
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                placeholder="(123) 456-7890"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="topupAmount">Amount</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <Input
+                  id="topupAmount"
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="pl-7"
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+              {selectedAccount && (
+                <p className="text-xs text-gray-500">
+                  Available balance: ${accounts.find(acc => acc.id === selectedAccount)?.available.toFixed(2) || '0.00'}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsMobileTopupDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleMobileTopup} 
+              disabled={!amount || parseFloat(amount) <= 0 || !selectedAccount || !phoneNumber}
+            >
+              Top-up
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
   )
 }
 
-function ActionButton({ 
-  icon, 
-  label, 
-  onClick 
-}: { 
-  icon: React.ReactNode; 
-  label: string; 
-  onClick: () => void 
+function ActionButton({
+  icon,
+  label,
+  onClick = () => {},
+}: {
+  icon: React.ReactNode
+  label: string
+  onClick?: () => void
 }) {
   return (
     <Button

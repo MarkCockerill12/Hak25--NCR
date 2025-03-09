@@ -1,10 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import { Button } from "../../components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
@@ -12,372 +8,477 @@ import { AccountSummary } from "../../components/account-summary"
 import { TransactionHistory } from "../../components/transaction-history"
 import { FinancialInsights } from "../../components/financial-insights"
 import { QuickActions } from "../../components/quick-actions"
-import { UserNav } from "../../components/user-nav"
-import { LayoutDashboard, CreditCard, BarChart3, PiggyBank, Settings, LogOut, Menu } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog"
+import { DashboardShell } from "../../components/dashboard-shell"
+import { PiggyBank, Eye, EyeOff, MonitorSmartphone } from "lucide-react"
+import { useLocalStorage } from "../hooks/use-local-storage"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
+import { initialAccountsData } from "../../lib/initial-data"
+import { useRouter } from "next/navigation"
+import { Switch } from "../../components/ui/switch"
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview")
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [showTransferDialog, setShowTransferDialog] = useState(false)
-  const [transferAmount, setTransferAmount] = useState("")
-  const [transferTo, setTransferTo] = useState("savings")
-  const [transferFrom, setTransferFrom] = useState("checking")
-  const [transferSuccess, setTransferSuccess] = useState(false)
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [accountsData, setAccountsData] = useState<typeof initialAccountsData>({ accounts: [], transactions: [] }) // Start with empty arrays
+  const [isDataLoaded, setIsDataLoaded] = useState(false)
+  const [savedData, setSavedData] = useLocalStorage("nextgen-atm-accounts", initialAccountsData)
+  const [savingsData, setSavingsData] = useLocalStorage("nextgen-atm-savings", {
+    accounts: [],
+    goals: [],
+    transactions: [],
+  })
+
+  // ATM mode state
+  const [isAtmMode, setIsAtmMode] = useLocalStorage("nextgen-atm-mode", false)
+
   const router = useRouter()
 
-  // Handle logout
-  const handleLogout = () => {
-    setShowLogoutConfirm(true)
+  // Load data after initial render to prevent hydration mismatch
+  useEffect(() => {
+    setAccountsData(savedData)
+    setIsDataLoaded(true)
+  }, [savedData])
+
+  // Save any changes to local storage
+  useEffect(() => {
+    if (isDataLoaded && accountsData.accounts.length > 0) {
+      setSavedData(accountsData)
+    }
+  }, [accountsData, isDataLoaded, setSavedData])
+
+  // Transfer dialog state
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
+  const [fromAccount, setFromAccount] = useState("")
+  const [toAccount, setToAccount] = useState("")
+  const [transferAmount, setTransferAmount] = useState("")
+  const [showBalances, setShowBalances] = useState(true)
+
+  // Handle opening the transfer dialog
+  const handleOpenTransferDialog = () => {
+    if (accountsData.accounts.length > 0) {
+      setFromAccount(accountsData.accounts[0].id)
+
+      // Set to account to the second account if available, otherwise keep empty
+      if (accountsData.accounts.length > 1) {
+        setToAccount(accountsData.accounts[1].id)
+      } else {
+        setToAccount("")
+      }
+    }
+
+    setTransferAmount("")
+    setIsTransferDialogOpen(true)
   }
 
-  const confirmLogout = () => {
-    // Simulate logout process
-    setTimeout(() => {
-      router.push("/")
-    }, 500)
+  // Handle transferring money between accounts
+  const handleTransfer = () => {
+    const amount = Number.parseFloat(transferAmount)
+    if (isNaN(amount) || amount <= 0 || !fromAccount || !toAccount || fromAccount === toAccount) {
+      return
+    }
+
+    // Find the source and destination accounts
+    const sourceAccount = accountsData.accounts.find((acc) => acc.id === fromAccount)
+    const destAccount = accountsData.accounts.find((acc) => acc.id === toAccount)
+
+    if (!sourceAccount || !destAccount) return
+
+    // Check if there are sufficient funds
+    if (sourceAccount.balance < amount) {
+      alert("Insufficient funds for this transfer.")
+      return
+    }
+
+    // Create new transactions
+    const withdrawalTransaction = {
+      id: `t${Date.now()}-1`,
+      accountId: sourceAccount.id,
+      type: "debit",
+      description: `Transfer to ${destAccount.name}`,
+      category: "Transfer",
+      amount: amount,
+      date: new Date().toISOString(),
+    }
+
+    const depositTransaction = {
+      id: `t${Date.now()}-2`,
+      accountId: destAccount.id,
+      type: "credit",
+      description: `Transfer from ${sourceAccount.name}`,
+      category: "Transfer",
+      amount: amount,
+      date: new Date().toISOString(),
+    }
+
+    // Update account balances
+    const updatedAccounts = accountsData.accounts.map((account) => {
+      if (account.id === sourceAccount.id) {
+        return {
+          ...account,
+          balance: account.balance - amount,
+          available: account.available - amount,
+        }
+      } else if (account.id === destAccount.id) {
+        return {
+          ...account,
+          balance: account.balance + amount,
+          available: account.available + amount,
+        }
+      }
+      return account
+    })
+
+    // Update state
+    setAccountsData((prevData) => ({
+      accounts: updatedAccounts,
+      transactions: [...prevData.transactions, withdrawalTransaction, depositTransaction],
+    }))
+
+    // Close dialog and reset form
+    setIsTransferDialogOpen(false)
+    setTransferAmount("")
   }
 
-  // Handle new transfer
-  const handleNewTransfer = () => {
-    setShowTransferDialog(true)
+  // Navigation handlers for quick actions
+  const handleNavigateToSavings = () => {
+    router.push("/dashboard/savings")
   }
 
-  const handleTransferSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Simulate processing
-    setTimeout(() => {
-      setTransferSuccess(true)
-      
-      // Reset and close after showing success
-      setTimeout(() => {
-        setTransferAmount("")
-        setTransferSuccess(false)
-        setShowTransferDialog(false)
-      }, 2000)
-    }, 1000)
+  // Get all accounts (checking, savings, etc.)
+  const allAccounts = [...(accountsData.accounts || []), ...(savingsData.accounts || [])]
+
+  // Toggle ATM mode
+  const toggleAtmMode = () => {
+    setIsAtmMode(!isAtmMode)
+
+    // If we're entering ATM mode, make sure we're on the overview tab
+    if (!isAtmMode) {
+      setActiveTab("overview")
+    }
   }
 
-  // Handle mobile menu toggle
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
+  // Effect to notify parent component about ATM mode change
+  useEffect(() => {
+    // This will be used by the DashboardShell to hide the sidebar
+    document.documentElement.style.setProperty("--atm-mode", isAtmMode ? "true" : "false")
+
+    return () => {
+      document.documentElement.style.removeProperty("--atm-mode")
+    }
+  }, [isAtmMode])
+
+  // Get default account (for ATM mode)
+  const defaultAccount = accountsData.accounts?.find((acc) => acc.isDefault) || accountsData.accounts?.[0]
+
+  if (!isDataLoaded) {
+    return (
+      <DashboardShell atmMode={isAtmMode}>
+        <div className="flex justify-center items-center h-96">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading your account data...</p>
+          </div>
+        </div>
+      </DashboardShell>
+    )
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Sidebar - Mobile responsive */}
-      <div className={`${isSidebarOpen ? 'flex' : 'hidden'} md:flex flex-col w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 absolute md:relative z-20 h-full`}>
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">NextGen ATM</h1>
-        </div>
-
-        <div className="flex flex-col flex-1 py-4">
-          <nav className="space-y-1 px-2">
-            <NavItem href="/dashboard" icon={<LayoutDashboard className="h-5 w-5" />} label="Dashboard" active={true} />
-            <NavItem href="/dashboard/accounts" icon={<CreditCard className="h-5 w-5" />} label="Accounts" />
-            <NavItem href="/dashboard/investments" icon={<BarChart3 className="h-5 w-5" />} label="Investments" />
-            <NavItem href="/dashboard/savings" icon={<PiggyBank className="h-5 w-5" />} label="Savings" />
-            <NavItem href="/dashboard/settings" icon={<Settings className="h-5 w-5" />} label="Settings" />
-          </nav>
-
-          <div className="mt-auto px-2">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-gray-500 dark:text-gray-400"
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-2 h-5 w-5" />
-              Log Out
-            </Button>
+    <DashboardShell atmMode={isAtmMode}>
+      <div className="flex flex-col space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {isAtmMode ? "ATM" : "Dashboard"}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400">Welcome back, John Doe</p>
           </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex h-16 items-center px-4 md:px-6">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="mr-2 md:hidden"
-              onClick={toggleSidebar}
-            >
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
-            <div className="ml-auto flex items-center space-x-4">
-              <UserNav />
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 p-4 md:p-6 overflow-auto" onClick={() => isSidebarOpen && setIsSidebarOpen(false)}>
-          <div className="flex flex-col space-y-6 max-w-6xl mx-auto">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Dashboard</h1>
-                <p className="text-gray-500 dark:text-gray-400">Welcome back, John Doe</p>
-              </div>
-              <div className="mt-2 md:mt-0">
-                <Button onClick={handleNewTransfer}>
-                  <PiggyBank className="mr-2 h-4 w-4" />
-                  New Transfer
-                </Button>
-              </div>
+          <div className="mt-2 md:mt-0 flex items-center gap-2">
+            <div className="flex items-center space-x-2">
+              <Switch id="atm-mode" checked={isAtmMode} onCheckedChange={toggleAtmMode} />
+              <Label htmlFor="atm-mode" className="flex items-center gap-1.5">
+                <MonitorSmartphone className="h-4 w-4" />
+                ATM Mode
+              </Label>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="transactions">Transactions</TabsTrigger>
-                <TabsTrigger value="insights">Insights</TabsTrigger>
-              </TabsList>
+            <Button variant="outline" size="sm" onClick={() => setShowBalances(!showBalances)}>
+              {showBalances ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+              {showBalances ? "Hide" : "Show"}
+            </Button>
 
-              <TabsContent value="overview" className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  <AccountSummary
-                    title="Checking Account"
-                    accountNumber="**** 1234"
-                    balance={2543.87}
-                    change={+125.24}
-                  />
-                  <AccountSummary
-                    title="Savings Account"
-                    accountNumber="**** 5678"
-                    balance={15750.52}
-                    change={+350.12}
-                  />
-                  <AccountSummary
-                    title="Investment Portfolio"
-                    accountNumber="**** 9012"
-                    balance={32150.75}
-                    change={-125.65}
-                  />
-                  <AccountSummary
-                    title="Credit Card"
-                    accountNumber="**** 3456"
-                    balance={-450.33}
-                    change={+50.0}
-                    isCredit
-                  />
+            {!isAtmMode && (
+              <Button onClick={handleOpenTransferDialog}>
+                <PiggyBank className="mr-2 h-4 w-4" />
+                New Transfer
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {isAtmMode ? (
+          // ATM Mode UI
+          <div className="space-y-6">
+            {/* Main Account Balance Card */}
+            {defaultAccount && (
+              <Card className="p-6">
+                <div className="text-center space-y-4">
+                  <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300">{defaultAccount.name}</h2>
+                  <div className="text-4xl font-bold text-gray-900 dark:text-white">
+                    {showBalances
+                      ? new Intl.NumberFormat("en-US", { style: "currency", currency: defaultAccount.currency }).format(
+                          defaultAccount.balance,
+                        )
+                      : "••••••"}
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Available Balance:{" "}
+                    {showBalances
+                      ? new Intl.NumberFormat("en-US", { style: "currency", currency: defaultAccount.currency }).format(
+                          defaultAccount.available,
+                        )
+                      : "••••••"}
+                  </p>
                 </div>
+              </Card>
+            )}
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <Card className="col-span-2">
-                    <CardHeader>
-                      <CardTitle className="text-gray-900 dark:text-white">Recent Transactions</CardTitle>
-                      <CardDescription className="text-gray-500 dark:text-gray-400">
-                        Your latest financial activity
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <TransactionHistory limit={5} />
-                    </CardContent>
-                  </Card>
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center text-gray-900 dark:text-white">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <QuickActions
+                  onTransfer={handleOpenTransferDialog}
+                  accounts={accountsData.accounts}
+                  onUpdateAccounts={setAccountsData}
+                  onSavings={handleNavigateToSavings}
+                />
+              </CardContent>
+            </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-gray-900 dark:text-white">Quick Actions</CardTitle>
-                      <CardDescription className="text-gray-500 dark:text-gray-400">
-                        Common tasks and services
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <QuickActions />
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
+            {/* Recent Transactions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-gray-900 dark:text-white">Recent Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {defaultAccount && (
+                  <TransactionHistory
+                    limit={5}
+                    showBalances={showBalances}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          // Regular Dashboard UI
+          <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="transactions">Transactions</TabsTrigger>
+              <TabsTrigger value="insights">Insights</TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="transactions" className="space-y-4">
-                <Card>
+            <TabsContent value="overview" className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {allAccounts.slice(0, 4).map((account) => (
+                  <AccountSummary
+                    key={account.id}
+                    title={account.name}
+                    accountNumber={account.number}
+                    balance={account.balance}
+                    change={
+                      account.id === "acc1"
+                        ? +125.24
+                        : account.id === "acc2"
+                          ? +350.12
+                          : account.id === "acc3"
+                            ? -125.65
+                            : +50.0
+                    }
+                    isCredit={account.type === "credit"}
+                    showBalances={showBalances}
+                  />
+                ))}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card className="col-span-2">
                   <CardHeader>
-                    <CardTitle className="text-gray-900 dark:text-white">Transaction History</CardTitle>
+                    <CardTitle className="text-gray-900 dark:text-white">Recent Transactions</CardTitle>
                     <CardDescription className="text-gray-500 dark:text-gray-400">
-                      A detailed view of your recent transactions
+                      Your latest financial activity
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <TransactionHistory limit={20} />
+                    <TransactionHistory
+                      limit={20}
+                      showBalances={showBalances}
+                    />
                   </CardContent>
                 </Card>
-              </TabsContent>
 
-              <TabsContent value="insights" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-gray-900 dark:text-white">Financial Insights</CardTitle>
+                    <CardTitle className="text-gray-900 dark:text-white">Quick Actions</CardTitle>
                     <CardDescription className="text-gray-500 dark:text-gray-400">
-                      Understand your spending patterns
+                      Common tasks and services
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <FinancialInsights />
+                    <QuickActions
+                      onTransfer={handleOpenTransferDialog}
+                      accounts={accountsData.accounts}
+                      onUpdateAccounts={setAccountsData}
+                      onSavings={handleNavigateToSavings}
+                    />
                   </CardContent>
                 </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </main>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="transactions" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-gray-900 dark:text-white">Transaction History</CardTitle>
+                  <CardDescription className="text-gray-500 dark:text-gray-400">
+                    A detailed view of your recent transactions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TransactionHistory limit={20} transactions={accountsData.transactions} showBalances={showBalances} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="insights" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-gray-900 dark:text-white">Financial Insights</CardTitle>
+                  <CardDescription className="text-gray-500 dark:text-gray-400">
+                    Understand your spending patterns
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FinancialInsights/>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
 
-      {/* Money Transfer Dialog */}
-      <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+      {/* Transfer Dialog */}
+      <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Transfer Money</DialogTitle>
-            <DialogDescription>
-              {transferSuccess 
-                ? "Transfer completed successfully!" 
-                : "Transfer funds between your accounts."}
-            </DialogDescription>
+            <DialogDescription>Transfer funds between your accounts.</DialogDescription>
           </DialogHeader>
-          
-          {!transferSuccess ? (
-            <form onSubmit={handleTransferSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="from" className="text-right">
-                    From
-                  </Label>
-                  <select 
-                    id="from"
-                    className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                    value={transferFrom}
-                    onChange={(e) => setTransferFrom(e.target.value)}
-                  >
-                    <option value="checking">Checking (**** 1234)</option>
-                    <option value="savings">Savings (**** 5678)</option>
-                  </select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="to" className="text-right">
-                    To
-                  </Label>
-                  <select
-                    id="to"
-                    className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                    value={transferTo}
-                    onChange={(e) => setTransferTo(e.target.value)}
-                  >
-                    <option value="savings">Savings (**** 5678)</option>
-                    <option value="checking">Checking (**** 1234)</option>
-                    <option value="creditcard">Credit Card (**** 3456)</option>
-                  </select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="amount" className="text-right">
-                    Amount
-                  </Label>
-                  <Input
-                    id="amount"
-                    type="text"
-                    placeholder="$0.00"
-                    className="col-span-3"
-                    value={transferAmount}
-                    onChange={(e) => {
-                      // Only allow numbers and decimals
-                      const value = e.target.value;
-                      if (/^\d*\.?\d{0,2}$/.test(value) || value === '') {
-                        setTransferAmount(value);
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowTransferDialog(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={!transferAmount || transferFrom === transferTo}>
-                  Transfer Now
-                </Button>
-              </DialogFooter>
-            </form>
-          ) : (
-            <div className="flex justify-center items-center py-8">
-              <div className="bg-green-100 text-green-800 p-4 rounded-full">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-12 w-12" 
-                  viewBox="0 0 20 20" 
-                  fill="currentColor"
-                >
-                  <path 
-                    fillRule="evenodd" 
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                    clipRule="evenodd" 
-                  />
-                </svg>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
-      {/* Logout Confirmation Dialog */}
-      <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirm Logout</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to log out of your account?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => setShowLogoutConfirm(false)}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="fromAccount">From Account</Label>
+              <select
+                id="fromAccount"
+                value={fromAccount}
+                onChange={(e) => setFromAccount(e.target.value)}
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+              >
+                <option value="">Select an account</option>
+                {accountsData.accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} (
+                    {showBalances
+                      ? new Intl.NumberFormat("en-US", { style: "currency", currency: account.currency }).format(
+                          account.balance,
+                        )
+                      : "••••••"}
+                    )
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="toAccount">To Account</Label>
+              <select
+                id="toAccount"
+                value={toAccount}
+                onChange={(e) => setToAccount(e.target.value)}
+                className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+              >
+                <option value="">Select an account</option>
+                {accountsData.accounts
+                  .filter((account) => account.id !== fromAccount)
+                  .map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} ({account.number})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="transferAmount">Amount</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <Input
+                  id="transferAmount"
+                  type="number"
+                  placeholder="0.00"
+                  value={transferAmount}
+                  onChange={(e) => setTransferAmount(e.target.value)}
+                  className="pl-7"
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+              {fromAccount && (
+                <p className="text-xs text-gray-500">
+                  Available balance:{" "}
+                  {showBalances
+                    ? new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: accountsData.accounts.find((acc) => acc.id === fromAccount)?.currency || "USD",
+                      }).format(accountsData.accounts.find((acc) => acc.id === fromAccount)?.available || 0)
+                    : "••••••"}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTransferDialogOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" variant="destructive" onClick={confirmLogout}>
-              Logout
+            <Button
+              onClick={handleTransfer}
+              disabled={
+                !transferAmount ||
+                Number.parseFloat(transferAmount) <= 0 ||
+                !fromAccount ||
+                !toAccount ||
+                fromAccount === toAccount
+              }
+            >
+              Transfer Funds
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardShell>
   )
 }
 
-function NavItem({
-  href,
-  icon,
-  label,
-  active = false,
-}: {
-  href: string
-  icon: React.ReactNode
-  label: string
-  active?: boolean
-}) {
-  const router = useRouter()
-  
-  // Handle navigation with simulated loading
-  const handleNavigation = (e: React.MouseEvent) => {
-    e.preventDefault()
-    // Let's simulate a navigation - in a real app,
-    // we would actually navigate to the page
-    if (!active) {
-      router.push(href)
-    }
-  }
-  
-  return (
-    <Link
-      href={href}
-      className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-        active
-          ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-          : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white"
-      }`}
-      onClick={handleNavigation}
-    >
-      <span className="mr-3">{icon}</span>
-      {label}
-    </Link>
-  )
-}

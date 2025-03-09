@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog"
 
 // Mock transaction data
-const transactions = [
+export const transactions = [
   {
     id: "t1",
     type: "debit",
@@ -88,21 +88,407 @@ const transactions = [
     date: "2025-02-27T10:15:00",
     icon: <ArrowDownLeft className="h-4 w-4" />,
   },
+  {
+    id: "t9",
+    type: "debit",
+    description: "Gas Station",
+    category: "Transportation",
+    amount: 50.0,
+    date: "2025-02-26T18:45:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t10",
+    type: "debit",
+    description: "Movie Theater",
+    category: "Entertainment",
+    amount: 15.0,
+    date: "2025-02-25T20:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t11",
+    type: "debit",
+    description: "Gym Membership",
+    category: "Healthcare",
+    amount: 45.0,
+    date: "2025-02-24T07:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t12",
+    type: "debit",
+    description: "Electricity Bill",
+    category: "Utilities",
+    amount: 90.0,
+    date: "2025-02-23T12:00:00",
+    icon: <Smartphone className="h-4 w-4" />,
+  },
+  {
+    id: "t13",
+    type: "debit",
+    description: "Book Store",
+    category: "Shopping",
+    amount: 25.0,
+    date: "2025-02-22T14:30:00",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    id: "t14",
+    type: "debit",
+    description: "Doctor's Appointment",
+    category: "Healthcare",
+    amount: 100.0,
+    date: "2025-02-21T10:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t15",
+    type: "debit",
+    description: "Concert Tickets",
+    category: "Entertainment",
+    amount: 75.0,
+    date: "2025-02-20T19:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t16",
+    type: "debit",
+    description: "Taxi Ride",
+    category: "Transportation",
+    amount: 20.0,
+    date: "2025-02-19T22:30:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t17",
+    type: "debit",
+    description: "Water Bill",
+    category: "Utilities",
+    amount: 30.0,
+    date: "2025-02-18T11:00:00",
+    icon: <Smartphone className="h-4 w-4" />,
+  },
+  {
+    id: "t18",
+    type: "debit",
+    description: "Clothing Store",
+    category: "Shopping",
+    amount: 60.0,
+    date: "2025-02-17T16:00:00",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    id: "t19",
+    type: "debit",
+    description: "Pharmacy",
+    category: "Healthcare",
+    amount: 25.0,
+    date: "2025-02-16T09:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t20",
+    type: "debit",
+    description: "Streaming Service",
+    category: "Entertainment",
+    amount: 12.99,
+    date: "2025-02-15T08:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t21",
+    type: "debit",
+    description: "Lunch",
+    category: "Food & Drink",
+    amount: 10.0,
+    date: "2025-02-14T12:30:00",
+    icon: <Utensils className="h-4 w-4" />,
+  },
+  {
+    id: "t22",
+    type: "debit",
+    description: "Coffee",
+    category: "Food & Drink",
+    amount: 5.0,
+    date: "2025-02-13T09:00:00",
+    icon: <Coffee className="h-4 w-4" />,
+  },
+  {
+    id: "t23",
+    type: "debit",
+    description: "Grocery Store",
+    category: "Shopping",
+    amount: 80.0,
+    date: "2025-02-12T14:00:00",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    id: "t24",
+    type: "debit",
+    description: "Dinner",
+    category: "Food & Drink",
+    amount: 50.0,
+    date: "2025-02-11T19:00:00",
+    icon: <Utensils className="h-4 w-4" />,
+  },
+  {
+    id: "t25",
+    type: "debit",
+    description: "Online Subscription",
+    category: "Entertainment",
+    amount: 9.99,
+    date: "2025-02-10T08:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t26",
+    type: "debit",
+    description: "Taxi",
+    category: "Transportation",
+    amount: 15.0,
+    date: "2025-02-09T22:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t27",
+    type: "debit",
+    description: "Gym",
+    category: "Healthcare",
+    amount: 40.0,
+    date: "2025-02-08T07:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t28",
+    type: "debit",
+    description: "Electricity Bill",
+    category: "Utilities",
+    amount: 85.0,
+    date: "2025-02-07T12:00:00",
+    icon: <Smartphone className="h-4 w-4" />,
+  },
+  {
+    id: "t29",
+    type: "debit",
+    description: "Book Store",
+    category: "Shopping",
+    amount: 20.0,
+    date: "2025-02-06T14:00:00",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    id: "t30",
+    type: "debit",
+    description: "Doctor",
+    category: "Healthcare",
+    amount: 100.0,
+    date: "2025-02-05T10:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t31",
+    type: "debit",
+    description: "Concert",
+    category: "Entertainment",
+    amount: 70.0,
+    date: "2025-02-04T19:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t32",
+    type: "debit",
+    description: "Taxi",
+    category: "Transportation",
+    amount: 18.0,
+    date: "2025-02-03T22:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t33",
+    type: "debit",
+    description: "Water Bill",
+    category: "Utilities",
+    amount: 25.0,
+    date: "2025-02-02T11:00:00",
+    icon: <Smartphone className="h-4 w-4" />,
+  },
+  {
+    id: "t34",
+    type: "debit",
+    description: "Clothing Store",
+    category: "Shopping",
+    amount: 55.0,
+    date: "2025-02-01T16:00:00",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    id: "t35",
+    type: "debit",
+    description: "Pharmacy",
+    category: "Healthcare",
+    amount: 30.0,
+    date: "2025-01-31T09:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t36",
+    type: "debit",
+    description: "Streaming Service",
+    category: "Entertainment",
+    amount: 12.99,
+    date: "2025-01-30T08:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t37",
+    type: "debit",
+    description: "Lunch",
+    category: "Food & Drink",
+    amount: 12.0,
+    date: "2025-01-29T12:30:00",
+    icon: <Utensils className="h-4 w-4" />,
+  },
+  {
+    id: "t38",
+    type: "debit",
+    description: "Coffee",
+    category: "Food & Drink",
+    amount: 4.5,
+    date: "2025-01-28T09:00:00",
+    icon: <Coffee className="h-4 w-4" />,
+  },
+  {
+    id: "t39",
+    type: "debit",
+    description: "Grocery Store",
+    category: "Shopping",
+    amount: 75.0,
+    date: "2025-01-27T14:00:00",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    id: "t40",
+    type: "debit",
+    description: "Dinner",
+    category: "Food & Drink",
+    amount: 45.0,
+    date: "2025-01-26T19:00:00",
+    icon: <Utensils className="h-4 w-4" />,
+  },
+  {
+    id: "t41",
+    type: "debit",
+    description: "Online Subscription",
+    category: "Entertainment",
+    amount: 9.99,
+    date: "2025-01-25T08:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t42",
+    type: "debit",
+    description: "Taxi",
+    category: "Transportation",
+    amount: 20.0,
+    date: "2025-01-24T22:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t43",
+    type: "debit",
+    description: "Gym",
+    category: "Healthcare",
+    amount: 35.0,
+    date: "2025-01-23T07:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t44",
+    type: "debit",
+    description: "Electricity Bill",
+    category: "Utilities",
+    amount: 80.0,
+    date: "2025-01-22T12:00:00",
+    icon: <Smartphone className="h-4 w-4" />,
+  },
+  {
+    id: "t45",
+    type: "debit",
+    description: "Book Store",
+    category: "Shopping",
+    amount: 22.0,
+    date: "2025-01-21T14:00:00",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    id: "t46",
+    type: "debit",
+    description: "Doctor",
+    category: "Healthcare",
+    amount: 95.0,
+    date: "2025-01-20T10:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t47",
+    type: "debit",
+    description: "Concert",
+    category: "Entertainment",
+    amount: 65.0,
+    date: "2025-01-19T19:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t48",
+    type: "debit",
+    description: "Taxi",
+    category: "Transportation",
+    amount: 18.0,
+    date: "2025-01-18T22:00:00",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    id: "t49",
+    type: "debit",
+    description: "Water Bill",
+    category: "Utilities",
+    amount: 28.0,
+    date: "2025-01-17T11:00:00",
+    icon: <Smartphone className="h-4 w-4" />,
+  },
+  {
+    id: "t50",
+    type: "debit",
+    description: "Clothing Store",
+    category: "Shopping",
+    amount: 60.0,
+    date: "2025-01-16T16:00:00",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
 ]
 
+// In the TransactionHistoryProps interface, add the missing props:
 interface TransactionHistoryProps {
-  limit?: number
+  limit?: number;
+  transactions?: any[]; // Accept transactions from parent
+  showBalances?: boolean; // Accept showBalances prop
 }
 
-export function TransactionHistory({ limit }: TransactionHistoryProps) {
+// Then update the component to use these props
+export function TransactionHistory({ 
+  limit, 
+  transactions: externalTransactions, 
+  showBalances = true 
+}: TransactionHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filter, setFilter] = useState("all")
   const [selectedTransaction, setSelectedTransaction] = useState<typeof transactions[0] | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
   const [showAllTransactions, setShowAllTransactions] = useState(false)
   const router = useRouter()
-
-  const handleViewAll = () => {
+  
+  const transactionsData = [...(externalTransactions || []), ...transactions];  const handleViewAll = () => {
     if (limit) {
       // If we're in a limited view, set state to show all
       setShowAllTransactions(true)
@@ -131,13 +517,13 @@ export function TransactionHistory({ limit }: TransactionHistoryProps) {
     setSelectedTransaction(null)
   }
   
-  const filteredTransactions = transactions
+  const filteredTransactions = transactionsData
     .filter((transaction) => {
       if (filter === "income" && transaction.type !== "credit") return false
       if (filter === "expenses" && transaction.type !== "debit") return false
       return transaction.description.toLowerCase().includes(searchTerm.toLowerCase())
     })
-    .slice(0, showAllTransactions ? undefined : limit || transactions.length)
+    .slice(0, showAllTransactions ? undefined : limit || transactionsData.length)
 
   return (
     <div className="space-y-4">
@@ -208,8 +594,7 @@ export function TransactionHistory({ limit }: TransactionHistoryProps) {
         )}
       </div>
 
-      {limit && transactions.length > limit && !showAllTransactions && (
-        <div className="text-center">
+      {limit && transactionsData.length > limit && !showAllTransactions && (        <div className="text-center">
           <Button variant="outline" onClick={handleViewAll}>View All Transactions</Button>
         </div>
       )}
