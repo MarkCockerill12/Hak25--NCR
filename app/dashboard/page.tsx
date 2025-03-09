@@ -274,9 +274,10 @@ export default function DashboardPage() {
               <CardContent>
                 {defaultAccount && (
                   <TransactionHistory
-                    limit={5}
-                    showBalances={showBalances}
-                  />
+                  limit={5}
+                  transactions={accountsData.transactions} // Add this line
+                  showBalances={showBalances}
+                />
                 )}
               </CardContent>
             </Card>
@@ -322,10 +323,11 @@ export default function DashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <TransactionHistory
-                      limit={20}
-                      showBalances={showBalances}
-                    />
+                  <TransactionHistory
+                    limit={20}
+                    transactions={accountsData.transactions} // Add this line
+                    showBalances={showBalances}
+                  />
                   </CardContent>
                 </Card>
 
@@ -357,7 +359,11 @@ export default function DashboardPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TransactionHistory limit={20} transactions={accountsData.transactions} showBalances={showBalances} />
+                <TransactionHistory
+                  limit={20}
+                  transactions={accountsData.transactions}
+                  showBalances={showBalances}
+                />
                 </CardContent>
               </Card>
             </TabsContent>

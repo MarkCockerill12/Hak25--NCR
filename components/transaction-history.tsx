@@ -471,8 +471,8 @@ export const transactions = [
 // In the TransactionHistoryProps interface, add the missing props:
 interface TransactionHistoryProps {
   limit?: number;
-  transactions?: any[]; // Accept transactions from parent
-  showBalances?: boolean; // Accept showBalances prop
+  transactions?: any[];
+  showBalances?: boolean;
 }
 
 // Then update the component to use these props
