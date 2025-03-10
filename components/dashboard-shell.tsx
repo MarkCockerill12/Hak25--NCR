@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -17,12 +16,10 @@ export function DashboardShell({ children, atmMode = false }: DashboardShellProp
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
 
-  // Close sidebar when path changes
   useEffect(() => {
     setIsSidebarOpen(false)
   }, [pathname])
 
-  // Navigation items
   const navItems = [
     {
       title: "Dashboard",
@@ -47,10 +44,10 @@ export function DashboardShell({ children, atmMode = false }: DashboardShellProp
   ]
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar for desktop */}
+    <div className="min-h-screen">
+      {/* Fixed Sidebar for desktop */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white dark:bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-screen ${
+        className={`fixed top-16 bottom-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out md:translate-x-0 overflow-y-auto ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } ${atmMode ? "md:hidden" : ""}`}
       >
@@ -83,11 +80,11 @@ export function DashboardShell({ children, atmMode = false }: DashboardShellProp
 
       {/* Mobile sidebar backdrop */}
       {isSidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setIsSidebarOpen(false)} />
+        <div className="fixed inset-0 z-20 bg-black/50 md:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
 
       {/* Main content */}
-      <main className={`flex-1 p-4 md:p-6 ${atmMode ? "max-w-3xl mx-auto" : ""}`}>
+      <div className={`${atmMode ? "" : "md:ml-64"}`}>
         {/* Mobile header with menu button */}
         <div className={`md:hidden mb-4 ${atmMode ? "hidden" : ""}`}>
           <Button
@@ -101,9 +98,10 @@ export function DashboardShell({ children, atmMode = false }: DashboardShellProp
         </div>
 
         {/* Page content */}
-        {children}
-      </main>
+        <main className={`p-4 md:p-6 ${atmMode ? "max-w-3xl mx-auto" : ""}`}>
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
-

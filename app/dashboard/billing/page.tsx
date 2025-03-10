@@ -1,45 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Layout } from "../../../components/layout"
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "../../../components/ui/card"
+import { DashboardShell } from "../../../components/dashboard-shell"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "../../../components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table"
 import { Badge } from "../../../components/ui/badge"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "../../../components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../../components/ui/dialog"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "../../../components/ui/select"
-import { CreditCard, Download, Plus, Calendar, DollarSign, CheckCircle2, AlertCircle, Clock, Trash2 } from 'lucide-react'
+import { CreditCard, Download, Plus, Calendar, DollarSign, CheckCircle2, Clock, Trash2 } from 'lucide-react'
 
 export default function BillingPage() {
   const [activeTab, setActiveTab] = useState("payment-methods")
@@ -172,13 +143,15 @@ export default function BillingPage() {
   ]
 
   return (
-    <Layout>
-      <div className="flex flex-col space-y-6 max-w-6xl mx-auto">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Billing</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Manage your payment methods, bills, and statements
-          </p>
+    <DashboardShell>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-tight">Billing</h2>
+            <p className="text-muted-foreground">
+              Manage your payment methods, bills, and statements
+            </p>
+          </div>
         </div>
 
         <Tabs defaultValue="payment-methods" className="space-y-4" onValueChange={setActiveTab}>
@@ -481,6 +454,6 @@ export default function BillingPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </DashboardShell>
   )
 }

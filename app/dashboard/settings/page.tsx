@@ -1,44 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { Layout } from "../../../components/layout"
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "../../../components/ui/card"
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "../../../components/ui/tabs"
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "../../../components/ui/form"
-import { Input } from "../../../components/ui/input"
+import { DashboardShell } from "../../../components/dashboard-shell"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../../../components/ui/form"
 import { Button } from "../../../components/ui/button"
 import { Switch } from "../../../components/ui/switch"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "../../../components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
 import { Slider } from "../../../components/ui/slider"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Bell, Lock, Globe, Eye, Smartphone, Fingerprint, Accessibility } from 'lucide-react'
+import { Bell, Lock, Eye, } from 'lucide-react'
 
 const notificationFormSchema = z.object({
   emailNotifications: z.boolean().default(true),
@@ -114,13 +88,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <Layout>
-      <div className="flex flex-col space-y-6 max-w-4xl mx-auto">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Settings</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Manage your account settings and preferences
-          </p>
+    <DashboardShell>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+            <p className="text-muted-foreground">
+              Manage your account settings and preferences
+            </p>
+          </div>
         </div>
 
         <Tabs defaultValue="notifications" className="space-y-4" onValueChange={setActiveTab}>
@@ -493,6 +469,6 @@ export default function SettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </DashboardShell>
   )
 }

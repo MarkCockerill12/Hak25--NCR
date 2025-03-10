@@ -82,11 +82,11 @@ function FeatureCard({
   icon,
   title,
   description,
-}: {
+}: Readonly<{
   icon: React.ReactNode
   title: string
   description: string
-}) {
+}>) {
   return (
     <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-0">
       <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
