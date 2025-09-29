@@ -30,7 +30,9 @@ export default function Home() {
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome to the Future of Banking</h2>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Secure, intuitive, and designed for your financial needs
+                  Secure, intuitive, and designed for your financial needs.
+                  <br>
+                  (This website uses cookies. By continuing you agree to the use and storage of them)
                 </p>
               </div>
               <div className="grid gap-4 w-full">
