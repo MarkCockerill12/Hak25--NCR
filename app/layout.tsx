@@ -33,7 +33,7 @@ export default function RootLayout({
             <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
               <div className="flex h-16 items-center px-4 md:px-6">
                 <div className="flex-1">
-                  <h1 className="text-x2 font-bold text-blue-600 dark:text-blue-400">Commisioned by NCR-Atleos</h1>
+                  <h1 className="text-x2 font-bold text-blue-600 dark:text-blue-400">Sponsored by NCR-Atleos</h1>
                 </div>
                 <div className="flex items-center gap-4">
                   <UserNav />
